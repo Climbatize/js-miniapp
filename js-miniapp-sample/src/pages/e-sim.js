@@ -20,11 +20,11 @@ const useStyles = makeStyles(() => ({
 export const initialState = {
   eSimSupport: {
     result: null,
-    isError: false,
+    error: false,
   },
   eSimConfig: {
     result: null,
-    isError: false,
+    error: false,
   },
 };
 
@@ -36,7 +36,7 @@ export const dataFetchReducer = (state, action) => {
         eSimSupport: {
           ...state.eSimSupport,
           result: null,
-          isError: false,
+          error: '',
         },
       };
     case 'SIM_SUPPORTED_SUCCESS':
@@ -52,7 +52,7 @@ export const dataFetchReducer = (state, action) => {
         ...state,
         eSimSupport: {
           ...state.eSimSupport,
-          isError: true,
+          error: action.error,
         },
       };
     case 'SIM_CONFIG_INIT':
@@ -61,7 +61,7 @@ export const dataFetchReducer = (state, action) => {
         eSimConfig: {
           ...state.eSimConfig,
           result: null,
-          isError: false,
+          error: '',
         },
       };
     case 'SIM_CONFIG_SUCCESS':
@@ -77,7 +77,7 @@ export const dataFetchReducer = (state, action) => {
         ...state,
         eSimConfig: {
           ...state.eSimConfig,
-          isError: true,
+          error: action.error,
         },
       };
     default:
@@ -105,15 +105,26 @@ function ESimComponent() {
     });
     try {
       const result = await MiniApp.esimService.isEsimSupported();
-      dispatch({
-        type: 'SIM_SUPPORTED_SUCCESS',
-        result,
-      });
+      if (result) {
+        dispatch({
+          type: 'SIM_SUPPORTED_SUCCESS',
+          result,
+        });
+        alert('Success! Esim is supported');
+      } else {
+        dispatch({
+          type: 'SIM_SUPPORTED_FAILED',
+          error: 'Esim supported is not available',
+        });
+        alert('Esim support is not available');
+      }
     } catch (error) {
-      console.log(error);
       dispatch({
         type: 'SIM_SUPPORTED_FAILED',
+        error:
+          error.message || 'Encountered error while calling isESimSupported',
       });
+      alert('Fail! Esim is support failed');
     }
   };
 
@@ -124,14 +135,24 @@ function ESimComponent() {
     });
     try {
       const result = await MiniApp.esimService.setupAndInstallEsim(configInput);
-      dispatch({
-        type: 'SIM_CONFIG_SUCCESS',
-        result,
-      });
+      if (result) {
+        dispatch({
+          type: 'SIM_CONFIG_SUCCESS',
+          result,
+        });
+      } else {
+        dispatch({
+          type: 'SIM_CONFIG_FAILED',
+          error: 'Esim setupAndInstallEsim is not available',
+        });
+      }
     } catch (error) {
       console.log(error);
       dispatch({
         type: 'SIM_CONFIG_FAILED',
+        error:
+          error.message ||
+          'Encountered error while calling setupAndInstallEsim',
       });
     }
   };
@@ -146,14 +167,14 @@ function ESimComponent() {
         >
           Check if eSim Supported
         </Button>
-        {(state.eSimSupport.support != null || state.eSimSupport.isError) && (
+        {(state.eSimSupport.support != null || state.eSimSupport.error) && (
           <Typography
             variant="body1"
-            color={state.eSimSupport.isError ? 'error' : 'textSecondary'}
+            color={state.eSimSupport.error ? 'error' : 'textSecondary'}
             style={{ marginTop: '20px', wordBreak: 'break-all' }}
           >
-            {state.eSimSupport.isError
-              ? 'Encountered error while calling isESimSupported'
+            {state.eSimSupport.error
+              ? state.eSimSupport.error
               : `eSim is supported: ${state.eSimSupport.support}`}
           </Typography>
         )}
@@ -173,7 +194,7 @@ function ESimComponent() {
             })
           }
         />
-        <TextField
+        {/* <TextField
           variant="outlined"
           className={classes.formInput}
           id="input-confirmationCode"
@@ -211,7 +232,7 @@ function ESimComponent() {
               iccid: e.target.value,
             })
           }
-        />
+        /> */}
         <TextField
           variant="outlined"
           className={classes.formInput}
@@ -225,7 +246,7 @@ function ESimComponent() {
             })
           }
         />
-        <TextField
+        {/* <TextField
           variant="outlined"
           className={classes.formInput}
           id="input-oid"
@@ -237,7 +258,7 @@ function ESimComponent() {
               oid: e.target.value,
             })
           }
-        />
+        /> */}
         <div className={classes.container}>
           <Button
             variant="contained"
@@ -262,15 +283,15 @@ function ESimComponent() {
             Send eSim Config
           </Button>
         </div>
-        {(state.eSimConfig.result != null || state.eSimConfig.isError) && (
+        {(state.eSimConfig.result != null || state.eSimConfig.error) && (
           <Typography
             variant="body1"
-            color={state.eSimConfig.isError ? 'error' : 'textSecondary'}
+            color={state.eSimConfig.error ? 'error' : 'textSecondary'}
             style={{ marginTop: '20px', wordBreak: 'break-all' }}
           >
-            {state.eSimConfig.isError
-              ? 'Encountered error while calling setupAndInstallEsim'
-              : `eSim config send result: ${state.eSimConfig.result}`}
+            {state.eSimConfig.error
+              ? state.eSimConfig.error
+              : `eSim config send setupAndInstallEsim was success`}
           </Typography>
         )}
       </div>

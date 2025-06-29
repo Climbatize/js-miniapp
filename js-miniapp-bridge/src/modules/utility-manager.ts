@@ -1,8 +1,9 @@
 import { MiniAppBridgeUtils, PlatformExecutor } from '../common-bridge';
 import { parseMiniAppError } from '../types/error-types';
 import { LogType } from '../types/log-type';
+import { PermissionName } from '../types/permissions';
 
-export class UtitlityManager {
+export class UtilityManager {
   executor: PlatformExecutor;
   platform: string;
 
@@ -25,6 +26,37 @@ export class UtitlityManager {
         response => {
           resolve(MiniAppBridgeUtils.BooleanValue(response));
         },
+        error => reject(parseMiniAppError(error))
+      );
+    });
+  }
+
+  /**
+   * Request permission status from host
+   * @param permission name - consists of 'camera', 'microphone' and 'gallery'
+   * @returns permission status of 'granted', 'denied' or 'unknown'
+   */
+  getPermissionStatus(permissionName: PermissionName) {
+    return new Promise<string>((resolve, reject) => {
+      return this.executor.exec(
+        'getPermissionStatus',
+        { permissionName },
+        response => resolve(response),
+        error => reject(parseMiniAppError(error))
+      );
+    });
+  }
+
+  /**
+   * Trigger launchAppSettings from host
+   * @returns true or false whether launch app settings is launched or not
+   */
+  launchAppSettings() {
+    return new Promise<boolean>((resolve, reject) => {
+      return this.executor.exec(
+        'launchAppSettings',
+        null,
+        response => resolve(MiniAppBridgeUtils.BooleanValue(response)),
         error => reject(parseMiniAppError(error))
       );
     });

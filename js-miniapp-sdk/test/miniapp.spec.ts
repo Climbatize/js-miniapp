@@ -19,6 +19,8 @@ import {
   Platform,
   HostEnvironmentInfo,
   EsimConfig,
+  PermissionName,
+  PermissionStatus,
 } from '../../js-miniapp-bridge/src';
 import { MiniApp } from '../src/miniapp';
 import miniAppInstance from '../src';
@@ -32,6 +34,9 @@ beforeEach(() => {
 const window: any = {};
 (global as any).window = window;
 
+const userProfileManager = {
+  forceLogout: sandbox.stub(),
+};
 window.MiniAppBridge = {
   getUniqueId: sandbox.stub(),
   getMessagingUniqueId: sandbox.stub(),
@@ -69,7 +74,14 @@ window.MiniAppBridge = {
   getPhoneNumber: sandbox.stub(),
   isEsimSupported: sandbox.stub(),
   setupAndInstallEsim: sandbox.stub(),
+  forceInternalWebView: sandbox.stub(),
+  userProfileManager,
+  utilityManager: {
+    getPermissionStatus: sandbox.stub(),
+    launchAppSettings: sandbox.stub(),
+  },
 };
+
 const miniApp = new MiniApp();
 const messageToContact: MessageToContact = {
   text: 'test',
@@ -221,6 +233,18 @@ describe('requestCustomPermissions', () => {
         status: CustomPermissionStatus.ALLOWED,
       },
     ]);
+  });
+});
+
+describe('requestPermissionStatus', () => {
+  it('should request provided permissions from the Mini App Bridge', () => {
+    window.MiniAppBridge.utilityManager.getPermissionStatus.resolves(
+      PermissionStatus.GRANTED
+    );
+
+    return expect(
+      miniApp.getPermissionStatus(PermissionName.CAMERA)
+    ).to.eventually.deep.equal(PermissionStatus.GRANTED);
   });
 });
 
@@ -915,5 +939,53 @@ describe('setupAndInstallEsim', () => {
         address: 'address',
       } as EsimConfig)
     ).to.eventually.be.rejected;
+  });
+});
+
+describe('forceLogout', () => {
+  it('should return if user is logged out', () => {
+    window.MiniAppBridge.userProfileManager.forceLogout.resolves(true);
+    return expect(miniApp.user.forceLogout()).to.eventually.equal(true);
+  });
+
+  it('should return error information', () => {
+    window.MiniAppBridge.userProfileManager.forceLogout.returns(
+      Promise.reject('test error')
+    );
+    return expect(miniApp.user.forceLogout()).to.eventually.be.rejected;
+  });
+});
+
+describe('forceInternalWebView', () => {
+  it('should return if webview settings were updated', () => {
+    window.MiniAppBridge.forceInternalWebView.resolves(true);
+    return expect(
+      miniApp.webviewManager.forceInternalWebView(true)
+    ).to.eventually.equal(true);
+  });
+
+  it('should return error information', () => {
+    window.MiniAppBridge.forceInternalWebView.returns(
+      Promise.reject('test error')
+    );
+    return expect(miniApp.webviewManager.forceInternalWebView(true)).to
+      .eventually.be.rejected;
+  });
+});
+
+describe('launchAppSettings', () => {
+  it('should return if launch app settings were updated', () => {
+    window.MiniAppBridge.utilityManager.launchAppSettings.resolves(true);
+    return expect(miniApp.miniappUtils.launchAppSettings()).to.eventually.equal(
+      true
+    );
+  });
+
+  it('should return error information', () => {
+    window.MiniAppBridge.utilityManager.launchAppSettings.returns(
+      Promise.reject('test error')
+    );
+    return expect(miniApp.miniappUtils.launchAppSettings()).to.eventually.be
+      .rejected;
   });
 });

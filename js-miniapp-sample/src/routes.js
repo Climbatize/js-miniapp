@@ -47,11 +47,13 @@ import GetExchangeTokenPage from './pages/get-exchange-token';
 import GifPage from './pages/gifs';
 import ImageUpload from './pages/image-upload';
 import Landing from './pages/landing';
+import LaunchAppSettings from './pages/launch-app-settings';
 import LocalStorage from './pages/local-storage';
 import LogEventPage from './pages/log-event';
 import Media from './pages/media';
 import TalkToChatBot from './pages/message';
 import { MiniAppPreferenceComponent } from './pages/miniapp-preferences';
+import PermissionStatus from './pages/permissionStatus';
 import SecureStorageComponent from './pages/secure-storage';
 import Share from './pages/share';
 import TriggerLoginUIPage from './pages/trigger-login-ui';
@@ -170,6 +172,16 @@ const eSimNavLink = {
   label: 'E Sim',
 };
 
+const permissionStatusNavLink = {
+  navLink: '/permissionStatus',
+  label: 'Permission Status',
+};
+
+const launchAppSettingsNavLink = {
+  navLink: '/launchAppSettings',
+  label: 'Launch App Settings',
+};
+
 const navLinks = [
   iosHomeNavLink,
   androidHomeNavLink,
@@ -206,6 +218,8 @@ const navLinks = [
   exchangeTokenNavLink,
   triggerLoginNavLink,
   eSimNavLink,
+  permissionStatusNavLink,
+  launchAppSettingsNavLink,
 ];
 
 const homeItem = [
@@ -403,6 +417,18 @@ const appItems = [
     label: eSimNavLink.label,
     navLink: eSimNavLink.navLink,
     element: <ESimPage />,
+  },
+  {
+    icon: <VpnKeyIcon />,
+    label: permissionStatusNavLink.label,
+    navLink: permissionStatusNavLink.navLink,
+    element: <PermissionStatus />,
+  },
+  {
+    icon: <VpnKeyIcon />,
+    label: launchAppSettingsNavLink.label,
+    navLink: launchAppSettingsNavLink.navLink,
+    element: <LaunchAppSettings />,
   },
 ];
 

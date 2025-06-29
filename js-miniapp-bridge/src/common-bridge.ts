@@ -3,6 +3,7 @@
 /**
  * Bridge for communicating with Mini App
  */
+const crypto = require('crypto');
 
 import { AdTypes } from './types/ad-types';
 import { Contact } from './types/contact';
@@ -43,9 +44,11 @@ import { BrowserManager } from './modules/browser-manager';
 import { GalleryManager } from './modules/gallery-manager';
 import { UserProfileManager } from './modules/userprofile-manager';
 import { WebViewConfigManager } from './modules/webview-config-manager';
-import { UtitlityManager } from './modules/utility-manager';
+import { UtilityManager } from './modules/utility-manager';
 import { LogType } from './types/log-type';
 import { EsimConfig } from './types/e-sim';
+import { Platform } from './types/platform';
+import { LaunchBrowserOptions } from './types/browser-options';
 
 /** @internal */
 const mabMessageQueue: Callback[] = [];
@@ -101,7 +104,7 @@ export class MiniAppBridge {
   galleryManager: GalleryManager;
   userProfileManager: UserProfileManager;
   webviewConfigManager: WebViewConfigManager;
-  utilityManager: UtitlityManager;
+  utilityManager: UtilityManager;
 
   constructor(executor: PlatformExecutor) {
     this.executor = executor;
@@ -112,7 +115,7 @@ export class MiniAppBridge {
     this.galleryManager = new GalleryManager(executor);
     this.userProfileManager = new UserProfileManager(executor);
     this.webviewConfigManager = new WebViewConfigManager(executor);
-    this.utilityManager = new UtitlityManager(executor);
+    this.utilityManager = new UtilityManager(executor);
 
     if (window) {
       window.addEventListener(
@@ -176,9 +179,9 @@ export class MiniAppBridge {
     // and decoded here.
     let result = value;
     if (eventType === 'miniappreceivejsoninfo') {
-      if (this.platform === 'iOS') {
+      if (this.platform === Platform.IOS) {
         result = convertUnicodeCharacters(value);
-      } else {
+      } else if (this.platform === Platform.ANDROID) {
         result = convertUnicodeCharactersForAndroid(value);
       }
     }
@@ -409,10 +412,12 @@ export class MiniAppBridge {
         'getUserName',
         null,
         userName => {
-          let value;
-          if (this.platform === 'iOS') {
+          let value = userName;
+          if (this.platform === Platform.IOS) {
             value = convertUnicodeCharacters(userName);
-          } else {
+          } else if (this.platform === Platform.ANDROID) {
+            value = convertUnicodeCharactersForAndroid(userName);
+          } else if (this.platform !== Platform.ELECTRON) {
             value = convertUnicodeCharactersForAndroid(userName);
           }
           resolve(value);
@@ -1015,11 +1020,14 @@ export class MiniAppBridge {
   }
 
   /**
-   * This interface helps you to launch URL in Internal browser
+   * This interface helps you to launch URL in Internal browser.
+   * You can pass either a string URL or a LaunchBrowserOptions object to specify
+   * HTTP method, body, audience, and scopes.
+   * @param urlOrParams The URL string or LaunchBrowserOptions object.
    * @returns true if browser is launched
    */
-  launchInternalBrowser(url: string) {
-    return this.browserManager.launchInternalBrowser(url);
+  launchInternalBrowser(urlOrParams: string | LaunchBrowserOptions) {
+    return this.browserManager.launchInternalBrowser(urlOrParams);
   }
 
   /**
@@ -1043,6 +1051,10 @@ export class MiniAppBridge {
     return this.webviewConfigManager.allowBackForwardNavigationGestures(
       shouldAllow
     );
+  }
+
+  forceInternalWebView(enable: boolean) {
+    return this.webviewConfigManager.forceInternalWebView(enable);
   }
 
   /**
@@ -1089,7 +1101,7 @@ export class MiniAppBridge {
     return new Promise<boolean>((resolve, reject) => {
       return this.executor.exec(
         'setupAndInstallEsim',
-        { config },
+        { eSimConfig: config },
         response => {
           resolve(MiniAppBridgeUtils.BooleanValue(response));
         },
@@ -1199,4 +1211,14 @@ export class MiniAppBridgeUtils {
     }
     return false;
   }
+}
+
+/**
+ * @description Math.random is a security risk, crypto is used to generate strong pseudo numbers
+ * @returns random float number
+ */
+export function cryptoRandom() {
+  const buffer = crypto.randomBytes(4); // Generate 4 random bytes
+  const value = buffer.readUInt32LE(0);
+  return value / 0xffffffff;
 }
